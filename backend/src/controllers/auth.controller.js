@@ -51,11 +51,11 @@ export const signup = async (req, res) => {
                 profilePic: newUser.profilePic
             })
 
-            try {
-                await sendWelcomeEmail(savedUser.email, savedUser.fullName, process.env.CLIENT_URL)
-            } catch (error) {
-                console.error("Failed to send welcome email: ", error)
-            }
+            // try {
+            //     await sendWelcomeEmail(savedUser.email, savedUser.fullName, process.env.CLIENT_URL)
+            // } catch (error) {
+            //     console.error("Failed to send welcome email: ", error)
+            // }
         }else{
             return res.status(400).json({message : 'Invalid user data, Account cannot be created'})
         }
@@ -65,3 +65,36 @@ export const signup = async (req, res) => {
     }
 }
 
+export const login = async (req, res) => {
+    const {email, password} = req.body
+
+    try {
+        const user  = await User.findOne({email})
+        if(!user){
+            return res.status(400).json({message : 'Invalid credentials'})
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(password, user.password)
+        if(!isPasswordCorrect){
+            return res.status(400).json({message : 'Invalid credentials'})
+        }
+user
+        generateToken(user._id, res)
+
+        res.status(200).json({
+            _id: user._id, 
+            fullName: user.fullName,
+            email: user.email, 
+            profilePic: user.profilePic
+        })
+
+    } catch (err) {
+        console.log("Login Error: ", err)
+        return res.status(500).json({message : "Internal server error"})
+    }
+}
+
+export const logout = (req, res) => {
+    res.cookie("jwt", '', {maxAge:0})
+    res.status(200).json({message: "Logout successful"})
+}
